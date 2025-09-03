@@ -1,0 +1,27 @@
+# EEG Challenge Training Pipeline Requirements
+# Core ML
+torch>=2.0.0
+torchvision
+numpy==1.24.3
+
+# EEG Processing  
+mne>=1.5.0
+braindecode>=0.8.0
+autoreject
+pyriemann
+
+# Data Science
+scikit-learn
+scipy
+pandas
+matplotlib
+seaborn
+
+# Cloud & I/O
+s3fs
+boto3
+
+# Utilities
+tqdm
+wandb
+argparse
