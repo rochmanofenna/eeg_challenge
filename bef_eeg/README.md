@@ -1,171 +1,119 @@
-# BEF Pipeline for EEG Foundation Challenge
+# BEF Pipeline for EEG Decoding
 
-## Overview
+## Mathematical Framework
 
-Complete implementation of the **BICEP → ENN → Fusion Alpha** (BEF) pipeline optimized for the 2025 EEG Foundation Challenge. This implementation addresses the weaknesses in the basic version by restoring the full theoretical capabilities of each component.
+### BICEP: Stochastic Path Generation
 
-## Key Improvements from Basic Implementation
-
-### BICEP (Brownian Iterative Continuous Estimation & Prediction)
-- **Before**: Single-path or mock simulation, no true stochastic modeling
-- **Now**: Full multi-future Ornstein-Uhlenbeck SDE with N=64 paths
-- **Features**:
-  - EEG-specific SDE modeling (oscillatory dynamics for SSVEP)
-  - Event-related jumps for ERP simulation
-  - Antithetic sampling for variance reduction
-  - Learned adaptive parameters
-
-### ENN (Entangled Neural Network)
-- **Before**: Simple probabilistic head with mean/variance output
-- **Now**: True K=16 state entanglement with delayed collapse
-- **Features**:
-  - PSD entanglement matrix E = L·L^T
-  - Recurrent processing with multiple hypothesis tracking
-  - Attention-based collapse mechanism
-  - Multi-scale temporal processing option
-
-### Fusion Alpha (Graph-Based Fusion)
-- **Before**: Fixed KNN smoothing, no learning
-- **Now**: Trainable GNN with contradiction resolution
-- **Features**:
-  - Graph Attention Network layers
-  - Dynamic edge weights based on correlation/spatial proximity
-  - MC Dropout for calibrated uncertainty
-  - Hierarchical fusion option (channel → region → global)
-
-## Architecture
+BICEP generates N stochastic sample paths from an input EEG signal using the Ornstein-Uhlenbeck SDE:
 
 ```
-EEG Input [B, 129, 200]
-    ↓
-BICEP: Simulate N=64 stochastic paths
-    ↓
-ENN: Process through K=16 entangled states
-    ↓
-Fusion Alpha: GNN contradiction resolution
-    ↓
-Output: Predictions + Calibrated Uncertainty
+dX_t = θ(μ - X_t)dt + σdW_t
 ```
 
-## Training Strategy
-
-### Stage 1: Pretraining (10 epochs)
-- Contrastive learning on ENN representations
-- Learn general EEG features without labels
-
-### Stage 2: Fusion Fine-tuning (20 epochs)
-- Freeze BICEP & ENN
-- Train only Fusion Alpha on target task
-- Quick adaptation to new decision boundaries
-
-### Stage 3: Full Fine-tuning (50 epochs)
-- Unfreeze ENN (keep BICEP frozen)
-- Joint training with cosine annealing
-- Final calibration and optimization
-
-## File Structure
+Where θ controls mean reversion rate, μ is the long-term mean, and σ is volatility. Implementation uses Euler-Maruyama discretization with timestep dt:
 
 ```
-models/
-├── bicep_eeg.py        # Stochastic multi-future simulator
-├── enn.py              # Entangled neural network
-├── fusion_alpha.py     # Graph neural network fusion
-└── bef_pipeline.py     # Unified BEF implementation
-
-train_bef.py            # Training infrastructure
-model.py                # Codabench submission (variant A)
-submission_bef.py       # Codabench submission (variant B)
-config_bef.yaml         # Configuration file
+X_{t+1} = X_t + θ(μ - X_t)dt + σ√dt · ε_t,  ε_t ~ N(0,1)
 ```
 
-## Usage
+For EEG, we add jump diffusion to model event-related potentials. The model generates N=64 paths per input trial to quantify trajectory uncertainty.
 
-### Training
+### ENN: Multi-State Entanglement
 
-```bash
-# Full training pipeline
-python train_bef.py
+ENN maintains K=16 latent states per neuron instead of scalar activations. State evolution follows:
 
-# Custom configuration
-python train_bef.py --config my_config.yaml
+```
+h_{t+1} = tanh(W_x·x_t + E·h_t - λ·h_t + b)
 ```
 
-### Inference
+Where E = L·L^T ensures positive semi-definite entanglement (L is learned Cholesky factor), and λ is a decay rate. The collapse mechanism uses attention:
+
+```
+α = softmax(W_g·h_T / τ)
+z = Σ_k α_k·h_{T,k}
+```
+
+This delays state reduction until the final layer, preserving multiple hypotheses throughout processing.
+
+### Fusion Alpha: Graph-Based Aggregation
+
+Constructs a graph G=(V,E) where nodes represent EEG channels and edges encode relationships. Edge weights combine correlation and spatial proximity:
+
+```
+A_{ij} = exp(cos(x_i, x_j) / T) · exp(-d_{ij}^2 / 2σ^2)
+```
+
+Message passing follows graph convolution:
+
+```
+H^{(l+1)} = σ(D^{-1/2}AD^{-1/2}H^{(l)}W^{(l)})
+```
+
+After L layers, nodes are aggregated via attention-weighted pooling for final prediction.
+
+## Pipeline Architecture
+
+```
+Input: EEG [B, 129, 200]
+    |
+    v
+BICEP: N=64 stochastic paths via Ornstein-Uhlenbeck SDE
+    |
+    v
+ENN: K=16 entangled states with attention collapse
+    |
+    v
+Fusion Alpha: Graph convolution over channel nodes
+    |
+    v
+Output: Predictions [B, 1] + Uncertainty [B, 1]
+```
+
+## Implementation Details
+
+### Files
+- `bicep_eeg.py`: SDE simulator with Euler-Maruyama integration
+- `enn.py`: Entangled RNN with PSD constraint via Cholesky factorization
+- `fusion_alpha.py`: Graph neural network with normalized Laplacian propagation
+- `pipeline.py`: End-to-end BEF orchestration
+- `train.py`: Three-stage training (pretrain, fusion fine-tune, full fine-tune)
+- `config.yaml`: Hyperparameters (N_paths=64, K=16, GNN layers=3)
+- `model.py`, `submission.py`: Codabench submission interfaces
+
+### Training Protocol
+
+1. Pretrain ENN with contrastive loss (10 epochs)
+2. Fine-tune Fusion Alpha with frozen BICEP/ENN (20 epochs)
+3. Fine-tune full pipeline with frozen BICEP (50 epochs)
+
+Learning rates decay from 1e-3 to 1e-4 across stages.
+
+### Usage
 
 ```python
-from model import Model
+from pipeline import BEF_EEG
 
-# Initialize (auto-loads weights)
-model = Model()
-
-# Predict
-eeg_data = torch.randn(32, 129, 200)  # [batch, channels, time]
-predictions = model(eeg_data)
+model = BEF_EEG(in_chans=129, sfreq=100, n_paths=64, K=16)
+outputs = model(eeg_data)  # Returns dict with predictions and uncertainties
 ```
 
-### Submission
-
-Both submission formats are provided:
-
-1. **model.py**: Uses no-args constructor
-2. **submission_bef.py**: Uses SFREQ/DEVICE constructor
-
-## Performance Targets
-
-Based on the theoretical analysis and improvements:
-
-| Metric | Conservative | Optimized BEF | Stretch Goal |
-|--------|-------------|---------------|--------------|
-| R² (RT) | 0.25-0.35 | 0.40-0.55 | 0.60-0.70 |
-| MAE (ms) | 100-120 | 85-105 | 75-90 |
-| AUC | 0.74-0.80 | 0.82-0.88 | 0.89-0.93 |
-
-## Key Features
-
-1. **Uncertainty Quantification**
-   - Epistemic uncertainty from MC Dropout
-   - Aleatoric uncertainty from ENN entropy
-   - Calibrated total uncertainty
-
-2. **Transfer Learning**
-   - Pretrain on passive tasks
-   - Fine-tune on active tasks
-   - Cross-subject graph transfer
-
-3. **Contradiction Resolution**
-   - Explicit detection of conflicting signals
-   - Graph-based reconciliation
-   - Attention-weighted fusion
-
-4. **Computational Efficiency**
-   - Reduced paths (32) for inference
-   - Optional hierarchical processing
-   - GPU-optimized operations
+For training:
+```bash
+python train.py
+```
 
 ## Requirements
 
-```
-torch>=2.0.0
-numpy
-scipy
-scikit-learn
-tqdm
-wandb (optional)
-pyyaml
-```
+- PyTorch >= 2.0
+- NumPy, SciPy, scikit-learn
+- YAML, tqdm
+- Optional: wandb for logging
 
-## Notes
+## Performance Metrics
 
-- All components follow the BEF axioms:
-  - A1: Multiplicity (BICEP multi-futures)
-  - A2: Delay-of-collapse (ENN entanglement)
-  - A3: Contradiction resolution (Fusion Alpha)
-  - A4: Calibrated uncertainty (full pipeline)
+Target performance on EEG Foundation Challenge:
+- MAE: 85-105 ms
+- R²: 0.40-0.55
+- AUC: 0.82-0.88
 
-- The implementation is modular - each component can be tested/replaced independently
-
-- Cryptographic extensions are not implemented but the architecture supports future integration
-
-## Citation
-
-If using this implementation, please acknowledge the BEF framework and EEG Foundation Challenge.
+These targets assume proper pretraining and calibration.
