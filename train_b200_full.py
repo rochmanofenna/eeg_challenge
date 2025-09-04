@@ -48,9 +48,9 @@ def main():
     # Create model
     model = EEGEANN(
         n_chans=64,
-        n_times=200, 
-        n_classes=1,
-        dropout_rate=0.2
+        n_times=200,
+        output_dim=1,
+        hidden_dim=128
     )
     
     # Multi-GPU setup
