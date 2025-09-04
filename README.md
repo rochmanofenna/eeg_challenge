@@ -1,128 +1,119 @@
-# 🧠 EEG Challenge: BICEP→ENN→FusionAlpha Pipeline
+# BEF Pipeline for EEG Decoding
 
-**State-of-the-art EEG→behavior prediction** for the NeurIPS 2025 EEG Foundation Challenge
+## Mathematical Framework
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
+### BICEP: Stochastic Path Generation
 
-## 🚀 One-Command Setup
+BICEP generates N stochastic sample paths from an input EEG signal using the Ornstein-Uhlenbeck SDE:
 
+```
+dX_t = θ(μ - X_t)dt + σdW_t
+```
+
+Where θ controls mean reversion rate, μ is the long-term mean, and σ is volatility. Implementation uses Euler-Maruyama discretization with timestep dt:
+
+```
+X_{t+1} = X_t + θ(μ - X_t)dt + σ√dt · ε_t,  ε_t ~ N(0,1)
+```
+
+For EEG, we add jump diffusion to model event-related potentials. The model generates N=64 paths per input trial to quantify trajectory uncertainty.
+
+### ENN: Multi-State Entanglement
+
+ENN maintains K=16 latent states per neuron instead of scalar activations. State evolution follows:
+
+```
+h_{t+1} = tanh(W_x·x_t + E·h_t - λ·h_t + b)
+```
+
+Where E = L·L^T ensures positive semi-definite entanglement (L is learned Cholesky factor), and λ is a decay rate. The collapse mechanism uses attention:
+
+```
+α = softmax(W_g·h_T / τ)
+z = Σ_k α_k·h_{T,k}
+```
+
+This delays state reduction until the final layer, preserving multiple hypotheses throughout processing.
+
+### Fusion Alpha: Graph-Based Aggregation
+
+Constructs a graph G=(V,E) where nodes represent EEG channels and edges encode relationships. Edge weights combine correlation and spatial proximity:
+
+```
+A_{ij} = exp(cos(x_i, x_j) / T) · exp(-d_{ij}^2 / 2σ^2)
+```
+
+Message passing follows graph convolution:
+
+```
+H^{(l+1)} = σ(D^{-1/2}AD^{-1/2}H^{(l)}W^{(l)})
+```
+
+After L layers, nodes are aggregated via attention-weighted pooling for final prediction.
+
+## Pipeline Architecture
+
+```
+Input: EEG [B, 129, 200]
+    |
+    v
+BICEP: N=64 stochastic paths via Ornstein-Uhlenbeck SDE
+    |
+    v
+ENN: K=16 entangled states with attention collapse
+    |
+    v
+Fusion Alpha: Graph convolution over channel nodes
+    |
+    v
+Output: Predictions [B, 1] + Uncertainty [B, 1]
+```
+
+## Implementation Details
+
+### Files
+- `bicep_eeg.py`: SDE simulator with Euler-Maruyama integration
+- `enn.py`: Entangled RNN with PSD constraint via Cholesky factorization
+- `fusion_alpha.py`: Graph neural network with normalized Laplacian propagation
+- `pipeline.py`: End-to-end BEF orchestration
+- `train.py`: Three-stage training (pretrain, fusion fine-tune, full fine-tune)
+- `config.yaml`: Hyperparameters (N_paths=64, K=16, GNN layers=3)
+- `model.py`, `submission.py`: Codabench submission interfaces
+
+### Training Protocol
+
+1. Pretrain ENN with contrastive loss (10 epochs)
+2. Fine-tune Fusion Alpha with frozen BICEP/ENN (20 epochs)
+3. Fine-tune full pipeline with frozen BICEP (50 epochs)
+
+Learning rates decay from 1e-3 to 1e-4 across stages.
+
+### Usage
+
+```python
+from pipeline import BEF_EEG
+
+model = BEF_EEG(in_chans=129, sfreq=100, n_paths=64, K=16)
+outputs = model(eeg_data)  # Returns dict with predictions and uncertainties
+```
+
+For training:
 ```bash
-git clone https://github.com/yourusername/eeg-challenge.git
-cd eeg-challenge
-bash install.sh
-source venv/bin/activate
-python train_s3_extended.py
+python train.py
 ```
 
-**That's it!** Works on any machine with CUDA.
+## Requirements
 
-## 🎯 Key Features
+- PyTorch >= 2.0
+- NumPy, SciPy, scikit-learn
+- YAML, tqdm
+- Optional: wandb for logging
 
-- **🔄 S3 Data Streaming**: Direct access to 3,326 real EEG files (no downloads)
-- **🧠 Advanced Preprocessing**: ICA, artifact removal, bad channel interpolation  
-- **🎲 Subject-Invariant Training**: Generalization across subjects
-- **📊 Uncertainty Quantification**: ENN-based confidence estimates
-- **⚡ Multi-GPU Support**: Distributed training ready
+## Performance Metrics
 
-## 📈 Performance
+Target performance on EEG Foundation Challenge:
+- MAE: 85-105 ms
+- R²: 0.40-0.55
+- AUC: 0.82-0.88
 
-| Model | MAE (seconds) | R² Score | AUC | Improvement |
-|-------|---------------|----------|-----|-------------|
-| Baseline | 0.80 | -0.002 | 0.51 | - |
-| **Our Pipeline** | **<0.50** | **>0.30** | **>0.70** | **🚀 2x better** |
-
-## 🏗️ Architecture
-
-```
-EEG Data → Advanced Preprocessing → ENN Model → Subject-Invariant Training → Predictions + Uncertainty
-```
-
-**Core Components:**
-- **BICEP**: Advanced EEG preprocessing pipeline
-- **ENN**: Epistemic Neural Networks for uncertainty
-- **FusionAlpha**: Subject-invariant representation learning
-
-## 🖥️ Usage
-
-### Quick Test (5 minutes)
-```bash
-python train_s3_extended.py --pretrain_epochs 1 --finetune_epochs 1
-```
-
-### Full Training
-```bash
-# Single GPU (8-12 hours)
-python train_s3_extended.py --pretrain_epochs 100 --finetune_epochs 50
-
-# Multi-GPU (2-4 hours)
-python hpc_scripts/train_distributed.py --nodes 2 --gpus 4
-```
-
-### Cloud Deployment
-Works on any cloud GPU platform:
-- **Google Colab Pro+**: Upload & run
-- **Lambda Labs**: SSH & execute
-- **AWS/GCP/Azure**: One-command setup
-
-## 📊 Results
-
-After training on 3,326 real EEG recordings:
-- **Task**: Predict reaction times from EEG signals
-- **Dataset**: Healthy Brain Network (HBN) 
-- **Subjects**: Cross-subject generalization
-- **Preprocessing**: Clinical-grade artifact removal
-
-## 🏆 Competition Performance
-
-Designed for **NeurIPS 2025 EEG Foundation Challenge**:
-- Transfer learning: Passive → Active tasks
-- Subject-invariant representations
-- Uncertainty-aware predictions
-- State-of-the-art preprocessing
-
-## 📁 Structure
-
-```
-eeg-challenge/
-├── install.sh              # One-command setup
-├── train_s3_extended.py     # Main training script
-├── models/                  # ENN architectures
-├── data/                    # S3 data streaming
-├── preprocessing/           # Advanced EEG preprocessing
-├── hpc_scripts/            # Multi-GPU training
-└── utils/                  # Training utilities
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Add tests for new features
-4. Submit pull request
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## 🎓 Citation
-
-```bibtex
-@software{eeg_challenge_2025,
-  title={BICEP→ENN→FusionAlpha: Advanced EEG-to-Behavior Prediction},
-  author={Your Name},
-  year={2025},
-  url={https://github.com/yourusername/eeg-challenge}
-}
-```
-
-## 🆘 Support
-
-- **Documentation**: See [README_REPRODUCIBLE.md](README_REPRODUCIBLE.md)
-- **Issues**: Use GitHub Issues
-- **Discussions**: GitHub Discussions
-
----
-
-**🎯 Achieve state-of-the-art EEG→behavior prediction with one command!**
+These targets assume proper pretraining and calibration.
