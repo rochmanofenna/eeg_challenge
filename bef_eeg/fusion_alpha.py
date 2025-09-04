@@ -310,7 +310,8 @@ class FusionAlphaGNN(nn.Module):
         result = {
             'logits': logits,
             'uncertainty': uncertainty,
-            'attention': attention_weights.squeeze(-1)
+            'attention': attention_weights.squeeze(-1),
+            'global_embedding': H_global  # Add this for MultiTask
         }
         
         if return_node_embeddings:

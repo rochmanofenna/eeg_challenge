@@ -315,10 +315,20 @@ class MultiTaskBEF(BEF_EEG):
         Multi-task forward pass
         """
         # Get base BEF outputs
-        base_out = self.forward(x, return_intermediates=True)
+        base_out = self.forward(x, return_intermediates=False, mc_samples=1)
         
-        # Extract fusion embeddings
-        fusion_embedding = base_out.get('fusion_embedding')
+        # Extract fusion embeddings from the fusion output
+        # Need to get it directly from fusion module
+        with torch.no_grad():
+            paths = self.bicep.simulate_paths(x, N_paths=self.n_paths)
+        path_mean = paths.mean(dim=0)
+        enn_Z, enn_alpha, _ = self.enn(path_mean)
+        A = build_sensor_graph(x, k=8, use_correlation=True)
+        node_features = self.extract_channel_features(
+            enn_Z, enn_alpha, (path_mean, paths.std(dim=0)), x
+        )
+        fusion_out = self.fusion(node_features, A, mc_samples=1)
+        fusion_embedding = fusion_out['global_embedding']
         
         outputs = {}
         

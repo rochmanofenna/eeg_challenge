@@ -25,7 +25,7 @@ class Submission:
         self.config = {
             'in_chans': 129,
             'sfreq': SFREQ,
-            'n_paths': 32,
+            'n_paths': 16,  # Light for inference
             'K': 16,
             'embed_dim': 64,
             'gnn_hidden': 64, 
@@ -112,7 +112,7 @@ class Submission:
                 """
                 x = x.to(self.device)
                 
-                with torch.no_grad():
+                with torch.inference_mode():
                     if hasattr(self.model, 'forward_multitask'):
                         outputs = self.model.forward_multitask(x, task='challenge1')
                         
@@ -121,7 +121,7 @@ class Submission:
                             'success': torch.sigmoid(outputs['success_logits'])
                         }
                     else:
-                        outputs = self.model(x, mc_samples=4)
+                        outputs = self.model(x, mc_samples=1)
                         
                         # Use main prediction for RT
                         rt_pred = outputs['prediction']
@@ -168,13 +168,13 @@ class Submission:
                 """
                 x = x.to(self.device)
                 
-                with torch.no_grad():
+                with torch.inference_mode():
                     if hasattr(self.model, 'forward_multitask'):
                         outputs = self.model.forward_multitask(x, task='challenge2')
                         return outputs['psycho_predictions']
                     else:
                         # Fallback: use standard model with projection
-                        outputs = self.model(x, mc_samples=4)
+                        outputs = self.model(x, mc_samples=1)
                         
                         # Project to 4 factors (simple approach)
                         pred = outputs['prediction']

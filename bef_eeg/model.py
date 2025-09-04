@@ -25,7 +25,7 @@ class Model(nn.Module):
         config = {
             'in_chans': 129,
             'sfreq': 100,
-            'n_paths': 32,  # Reduced for inference speed
+            'n_paths': 16,  # Light for fast inference
             'K': 16,
             'embed_dim': 64,
             'gnn_hidden': 64,
@@ -95,9 +95,9 @@ class Model(nn.Module):
         if x.dim() == 2:
             x = x.unsqueeze(0)  # Add batch dimension if missing
         
-        # Get BEF predictions with reduced MC samples for speed
-        with torch.no_grad():
-            outputs = self.net(x, mc_samples=4)
+        # Lightweight inference with minimal MC samples
+        with torch.inference_mode():
+            outputs = self.net(x, mc_samples=1)  # Single sample for speed
             predictions = outputs['prediction']
         
         return predictions

@@ -10,9 +10,14 @@ from torch.utils.data import DataLoader, Dataset
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
-import wandb
 from typing import Dict, Optional, Tuple, List
 import yaml
+
+# Optional wandb import
+try:
+    import wandb
+except ImportError:
+    wandb = None
 
 from pipeline import BEF_EEG, MultiTaskBEF, PretrainableBEF
 from utils_io import load_eeg_data
@@ -35,7 +40,7 @@ class BEFTrainer:
         self.device = device
         self.use_wandb = use_wandb
         
-        if use_wandb:
+        if use_wandb and wandb is not None:
             wandb.init(project="eeg-bef", config=config)
             wandb.watch(model)
         
@@ -158,7 +163,7 @@ class BEFTrainer:
             
             losses.append(loss.item())
             
-            if self.use_wandb and batch_idx % 10 == 0:
+            if self.use_wandb and wandb is not None and batch_idx % 10 == 0:
                 wandb.log({
                     'pretrain_loss': loss.item(),
                     'pretrain_epoch': epoch
@@ -209,7 +214,7 @@ class BEFTrainer:
                 if k in losses:
                     losses[k].append(v.item())
             
-            if self.use_wandb and batch_idx % 10 == 0:
+            if self.use_wandb and wandb is not None and batch_idx % 10 == 0:
                 wandb.log({
                     f'{stage}_loss': loss_dict['total'].item(),
                     f'{stage}_epoch': epoch
@@ -253,7 +258,7 @@ class BEFTrainer:
         # Compute metrics
         metrics = self.compute_metrics(predictions, targets, uncertainties)
         
-        if self.use_wandb:
+        if self.use_wandb and wandb is not None:
             wandb.log({f'{stage}_{k}': v for k, v in metrics.items()})
         
         return metrics
@@ -403,7 +408,7 @@ class BEFTrainer:
         path.parent.mkdir(exist_ok=True)
         torch.save(checkpoint, path)
         
-        if self.use_wandb:
+        if self.use_wandb and wandb is not None:
             wandb.save(str(path))
     
     def load_checkpoint(self, filename: str):
