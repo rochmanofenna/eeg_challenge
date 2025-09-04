@@ -1,0 +1,82 @@
+# BEF Configuration for EEG Foundation Challenge
+
+# Data parameters
+data_path: "./data"
+in_chans: 129
+sfreq: 100
+window_s: 2
+
+# BICEP parameters
+bicep:
+  n_paths: 64
+  use_oscillatory: true
+  frequencies: [10.0, 15.0, 20.0]  # Hz - SSVEP frequencies
+  ou:
+    theta: 2.0
+    mu0: 0.0
+    sigma: 0.5
+  jump_rate: 0.1
+  jump_scale: 0.2
+  use_antithetic: true
+
+# ENN parameters
+enn:
+  K: 16  # Number of entangled states
+  embed_dim: 64
+  n_layers: 2
+  use_multiscale: false
+  scales: [1, 2, 4]
+  use_layer_norm: true
+  temperature: 1.0
+
+# Fusion Alpha parameters
+fusion:
+  gnn_hid: 64
+  layers: 3
+  use_attention: true
+  use_hierarchical: false
+  dropout: 0.2
+  k_neighbors: 8
+  use_correlation: true
+  use_spatial: true
+
+# Training parameters
+train:
+  # Pretraining
+  do_pretrain: true
+  epochs_pretrain: 10
+  lr_pretrain: 1e-3
+  
+  # Fusion fine-tuning
+  epochs_fusion: 20
+  lr_fusion: 5e-4
+  
+  # Full fine-tuning
+  epochs_finetune: 50
+  lr_finetune: 1e-4
+  
+  # General
+  batch_size: 32
+  weight_decay: 1e-4
+  clip_grad: 1.0
+  num_workers: 4
+
+# Evaluation parameters
+eval:
+  mc_samples: 100
+  n_bins: 10
+
+# Experiment settings
+use_wandb: true
+project_name: "eeg-bef"
+checkpoint_dir: "./checkpoints"
+log_interval: 10
+
+# Hardware
+device: "cuda"
+mixed_precision: false
+
+# Challenge-specific
+challenge:
+  task: "regression"  # "regression" or "classification"
+  num_psycho_factors: 4  # For Challenge 2
