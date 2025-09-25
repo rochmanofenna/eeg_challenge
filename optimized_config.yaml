@@ -1,0 +1,99 @@
+# Optimized BEF Configuration for 3x RTX 4090
+
+# Data parameters
+data_path: "./data"
+s3_config:
+  bucket: "fcp-indi"
+  prefix: "data/Projects/HBN/BIDS_EEG"
+  region: "us-east-1"
+  access_key_id: null
+  secret_access_key: null
+  releases: ["cmi_bids_R1", "cmi_bids_R2", "cmi_bids_R3", "cmi_bids_R4", "cmi_bids_R5", "cmi_bids_R6", "cmi_bids_R7", "cmi_bids_R8", "cmi_bids_R9", "cmi_bids_R10", "cmi_bids_R11", "cmi_bids_NC"]
+  use_mini: true
+  format: "bdf"
+  max_subjects_per_release: 20
+  cache_dir: "/tmp/hbn_cache"
+  max_cache_gb: 50.0
+
+in_chans: 129
+sfreq: 100
+window_s: 2
+
+# BICEP parameters (unchanged)
+bicep:
+  n_paths: 64
+  use_oscillatory: true
+  frequencies: [10.0, 15.0, 20.0]
+  ou:
+    theta: 2.0
+    mu0: 0.0
+    sigma: 0.5
+  jump_rate: 0.1
+  jump_scale: 0.2
+  use_antithetic: true
+
+# ENN parameters (unchanged)
+enn:
+  K: 16
+  embed_dim: 64
+  n_layers: 2
+  use_multiscale: false
+  scales: [1, 2, 4]
+  use_layer_norm: true
+  temperature: 1.0
+
+# Fusion Alpha parameters (unchanged)
+fusion:
+  gnn_hid: 64
+  layers: 3
+  use_attention: true
+  use_hierarchical: false
+  dropout: 0.2
+  k_neighbors: 8
+  use_correlation: true
+  use_spatial: true
+
+# OPTIMIZED Training parameters
+train:
+  do_pretrain: true
+  epochs_pretrain: 10
+  lr_pretrain: 1e-3
+  
+  epochs_fusion: 20
+  lr_fusion: 5e-4
+  
+  epochs_finetune: 50
+  lr_finetune: 1e-4
+  
+  # INCREASED batch size for better GPU utilization
+  batch_size: 128  # Per GPU: 128 * 3 = 384 total
+  weight_decay: 1e-4
+  clip_grad: 1.0
+  
+  # MORE workers for faster data loading
+  num_workers: 12  # Per GPU
+  prefetch_factor: 4  # Prefetch batches
+  persistent_workers: true  # Keep workers alive
+  pin_memory: true  # Faster GPU transfer
+
+# Evaluation parameters
+eval:
+  mc_samples: 100
+  n_bins: 10
+
+# Experiment settings
+use_wandb: false
+project_name: "eeg-bef"
+checkpoint_dir: "./checkpoints"
+log_interval: 10
+
+# Hardware
+device: "cuda"
+# ENABLE mixed precision for 2x speedup
+mixed_precision: true
+amp_dtype: "bfloat16"  # Better than fp16 on 4090
+
+# Challenge-specific
+challenge:
+  task: "regression"
+  num_psycho_factors: 4

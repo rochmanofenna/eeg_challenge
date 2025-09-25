@@ -1,0 +1,163 @@
+[
+  {
+    "release": "cmi_bids_NC",
+    "subjects": 447,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "contrastChangeDetection",
+      "seqLearning6target",
+      "surroundSupp",
+      "symbolSearch"
+    ],
+    "files_per_subject": 11,
+    "estimated_total_files": 4917
+  },
+  {
+    "release": "cmi_bids_R1",
+    "subjects": 136,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "seqLearning8target",
+      "surroundSupp",
+      "symbolSearch"
+    ],
+    "files_per_subject": 12,
+    "estimated_total_files": 1632
+  },
+  {
+    "release": "cmi_bids_R2",
+    "subjects": 150,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "seqLearning8target",
+      "surroundSupp",
+      "symbolSearch"
+    ],
+    "files_per_subject": 12,
+    "estimated_total_files": 1800
+  },
+  {
+    "release": "cmi_bids_R3",
+    "subjects": 184,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "seqLearning6target",
+      "surroundSupp",
+      "symbolSearch"
+    ],
+    "files_per_subject": 12,
+    "estimated_total_files": 2208
+  },
+  {
+    "release": "cmi_bids_R4",
+    "subjects": 324,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "seqLearning8target",
+      "surroundSupp"
+    ],
+    "files_per_subject": 11,
+    "estimated_total_files": 3564
+  },
+  {
+    "release": "cmi_bids_R5",
+    "subjects": 330,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "seqLearning6target",
+      "surroundSupp"
+    ],
+    "files_per_subject": 11,
+    "estimated_total_files": 3630
+  },
+  {
+    "release": "cmi_bids_R6",
+    "subjects": 135,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "seqLearning8target",
+      "surroundSupp"
+    ],
+    "files_per_subject": 11,
+    "estimated_total_files": 1485
+  },
+  {
+    "release": "cmi_bids_R7",
+    "subjects": 381,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "surroundSupp"
+    ],
+    "files_per_subject": 10,
+    "estimated_total_files": 3810
+  },
+  {
+    "release": "cmi_bids_R8",
+    "subjects": 257,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "ThePresent",
+      "contrastChangeDetection",
+      "surroundSupp"
+    ],
+    "files_per_subject": 8,
+    "estimated_total_files": 2056
+  },
+  {
+    "release": "cmi_bids_R9",
+    "subjects": 295,
+    "tasks": [
+      "DespicableMe",
+      "DiaryOfAWimpyKid",
+      "FunwithFractals",
+      "RestingState",
+      "ThePresent",
+      "contrastChangeDetection",
+      "seqLearning8target",
+      "surroundSupp",
+      "symbolSearch"
+    ],
+    "files_per_subject": 12,
+    "estimated_total_files": 3540
+  }
+]

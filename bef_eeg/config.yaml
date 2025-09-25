@@ -1,0 +1,102 @@
+# BEF Configuration for EEG Foundation Challenge
+
+# Data parameters
+data_path: "./data"
+# S3 configuration for HBN datasets
+s3_config:
+  bucket: "fcp-indi"
+  prefix: "data/Projects/HBN/BIDS_EEG"
+  region: "us-east-1"
+  access_key_id: null  # Public bucket - no credentials needed
+  secret_access_key: null
+  # HBN specific settings (actual S3 structure uses cmi_bids_R format)
+  releases: ["cmi_bids_R1", "cmi_bids_R2", "cmi_bids_R3", "cmi_bids_R4", "cmi_bids_R5", "cmi_bids_R6", "cmi_bids_R7", "cmi_bids_R8", "cmi_bids_R9", "cmi_bids_R10", "cmi_bids_R11", "cmi_bids_NC"]
+  use_mini: true  # Use 100Hz downsampled mini datasets
+  format: "bdf"   # "bdf" or "set"
+  max_subjects_per_release: 20  # Mini datasets have 20 subjects each
+  cache_dir: "/tmp/hbn_cache"
+  max_cache_gb: 50.0  # Increase for multiple releases
+in_chans: 129
+sfreq: 100
+window_s: 2
+
+# BICEP parameters
+bicep:
+  n_paths: 64
+  use_oscillatory: true
+  frequencies: [10.0, 15.0, 20.0]  # Hz - SSVEP frequencies
+  ou:
+    theta: 2.0
+    mu0: 0.0
+    sigma: 0.5
+  jump_rate: 0.1
+  jump_scale: 0.2
+  use_antithetic: true
+
+# ENN parameters
+enn:
+  K: 16  # Number of entangled states
+  embed_dim: 64
+  n_layers: 2
+  use_multiscale: false
+  scales: [1, 2, 4]
+  use_layer_norm: true
+  temperature: 1.0
+
+# Fusion Alpha parameters
+fusion:
+  gnn_hid: 64
+  layers: 3
+  use_attention: true
+  use_hierarchical: false
+  dropout: 0.2
+  k_neighbors: 8
+  use_correlation: true
+  use_spatial: true
+
+# Training parameters
+train:
+  # Pretraining
+  do_pretrain: true
+  epochs_pretrain: 10
+  lr_pretrain: 1e-3
+  
+  # Fusion fine-tuning
+  epochs_fusion: 20
+  lr_fusion: 5e-4
+  
+  # Full fine-tuning
+  epochs_finetune: 50
+  lr_finetune: 1e-4
+  
+  # General
+  batch_size: 32
+  weight_decay: 1e-4
+  clip_grad: 1.0
+  num_workers: 4
+
+# Evaluation parameters
+eval:
+  mc_samples: 100
+  n_bins: 10
+
+# Experiment settings
+use_wandb: false
+project_name: "eeg-bef"
+checkpoint_dir: "./checkpoints"
+log_interval: 10
+
+# Hardware
+device: "cuda"
+mixed_precision: false
+
+# Challenge-specific
+challenge:
+  task: "regression"  # "regression" or "classification"
+  num_psycho_factors: 4  # For Challenge 2
+
+# Training task specification
+task: "binary"  # "regression", "binary", or "multiclass"
+num_classes: 2  # For multiclass/binary task
+monitor_metric: "val_acc"  # Metric to monitor for best model
+monitor_mode: "max"  # "max" for accuracy/f1, "min" for loss

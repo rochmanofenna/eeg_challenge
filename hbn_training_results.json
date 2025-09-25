@@ -1,0 +1,116 @@
+{
+  "best_metrics": {
+    "val_mae": 0.8632292151451111,
+    "val_r2": -Infinity,
+    "val_auc": 0.0,
+    "mae": 0.8552681803703308,
+    "mse": 0.9872215390205383,
+    "r2": -0.4808323383331299,
+    "ece": NaN,
+    "auc": 0.0,
+    "mean_uncertainty": NaN
+  },
+  "releases": [
+    "cmi_bids_R1",
+    "cmi_bids_R2"
+  ],
+  "max_subjects_per_release": 20,
+  "total_parameters": 258091,
+  "config": {
+    "data_path": "./data",
+    "s3_config": {
+      "bucket": "fcp-indi",
+      "prefix": "data/Projects/HBN/BIDS_EEG",
+      "region": "us-east-1",
+      "access_key_id": null,
+      "secret_access_key": null,
+      "releases": [
+        "cmi_bids_R1",
+        "cmi_bids_R2",
+        "cmi_bids_R3",
+        "cmi_bids_R4",
+        "cmi_bids_R5",
+        "cmi_bids_R6",
+        "cmi_bids_R7",
+        "cmi_bids_R8",
+        "cmi_bids_R9",
+        "cmi_bids_NC"
+      ],
+      "use_mini": true,
+      "format": "bdf",
+      "max_subjects_per_release": 20,
+      "cache_dir": "/tmp/hbn_cache",
+      "max_cache_gb": 50.0
+    },
+    "in_chans": 129,
+    "sfreq": 100,
+    "window_s": 2,
+    "bicep": {
+      "n_paths": 64,
+      "use_oscillatory": true,
+      "frequencies": [
+        10.0,
+        15.0,
+        20.0
+      ],
+      "ou": {
+        "theta": 2.0,
+        "mu0": 0.0,
+        "sigma": 0.5
+      },
+      "jump_rate": 0.1,
+      "jump_scale": 0.2,
+      "use_antithetic": true
+    },
+    "enn": {
+      "K": 16,
+      "embed_dim": 64,
+      "n_layers": 2,
+      "use_multiscale": false,
+      "scales": [
+        1,
+        2,
+        4
+      ],
+      "use_layer_norm": true,
+      "temperature": 1.0
+    },
+    "fusion": {
+      "gnn_hid": 64,
+      "layers": 3,
+      "use_attention": true,
+      "use_hierarchical": false,
+      "dropout": 0.2,
+      "k_neighbors": 8,
+      "use_correlation": true,
+      "use_spatial": true
+    },
+    "train": {
+      "do_pretrain": true,
+      "epochs_pretrain": 10,
+      "lr_pretrain": "1e-3",
+      "epochs_fusion": 20,
+      "lr_fusion": "5e-4",
+      "epochs_finetune": 50,
+      "lr_finetune": "1e-4",
+      "batch_size": 16,
+      "weight_decay": "1e-4",
+      "clip_grad": 1.0,
+      "num_workers": 4
+    },
+    "eval": {
+      "mc_samples": 100,
+      "n_bins": 10
+    },
+    "use_wandb": false,
+    "project_name": "eeg-bef",
+    "checkpoint_dir": "./checkpoints",
+    "log_interval": 10,
+    "device": "cuda",
+    "mixed_precision": false,
+    "challenge": {
+      "task": "regression",
+      "num_psycho_factors": 4
+    }
+  }
+}

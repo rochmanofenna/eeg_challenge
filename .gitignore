@@ -1,0 +1,55 @@
+# Data files
+*.zip
+*.tar.gz
+*.set
+*.edf
+*.bdf
+R5_mini*/
+data_cache/
+*.h5
+*.hdf5
+
+# Model checkpoints
+checkpoints*/
+results/
+logs/
+*.pt
+*.pth
+*.ckpt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Weights & Biases
+wandb/
+
+# MNE data cache
+mne_data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log

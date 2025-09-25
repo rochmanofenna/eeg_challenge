@@ -1,0 +1,11 @@
+# BEF Pipeline Requirements
+torch>=2.0.0
+numpy>=1.24.0
+scipy>=1.7.0
+scikit-learn>=1.0.0
+pandas>=1.3.0
+tqdm>=4.62.0
+pyyaml>=6.0
+wandb>=0.12.0  # Optional for experiment tracking
+mne>=1.5.0
+boto3>=1.26.0
